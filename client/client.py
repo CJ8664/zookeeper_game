@@ -4,21 +4,20 @@ import logging
 import time
 
 from kazoo.client import KazooClient
+from kazoo.recipe.queue import Queue
 
-def consume_trigger(event):
-    print('Event captured')
-
-def main():
-    zk = KazooClient(hosts='127.0.0.1:2181')
-    zk.start()
-    print('Client begin')
-    zk.ensure_path("/queue")
-    data = 0
-    while True:
-        zk.set("/queue", str(data).encode())
-        time.sleep(1)
-        print('Value set: {}'.format(data))
-        data += 1
+zk = KazooClient(hosts='127.0.0.1:2181')
+zk.start()
+print('Client begin')
+data = 0
+my_queue = Queue(zk, "/queue")
+while True:
+    # zk.set("/queue", str(data).encode())
+    # zzz = bytes(, 'utf')
+    my_queue.put(str(data).encode('utf-8'))
+    time.sleep(1)
+    print('Value set: {}'.format(data))
+    data += 1
 
 if __name__ == '__main__':
     main()
