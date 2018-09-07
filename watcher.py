@@ -11,6 +11,7 @@ from kazoo.recipe.queue import Queue
 class ScoreWatcher:
 
     curr_score = []
+    high_score = []
 
     def __init__(self):
         logging.basicConfig()
@@ -32,7 +33,7 @@ class ScoreWatcher:
     def print_leader_board(self):
         print('Highest scores')
         print('--------------')
-        for player, score in sorted(self.curr_score, key=lambda x: int(x[1]), reverse=True):
+        for player, score in self.high_score:
             print('{}\t\t{}'.format(player, score))
         print('\n')
 
@@ -40,6 +41,12 @@ class ScoreWatcher:
     def process_score(self, children):
         chil = self.my_queue.get()
         if chil:
+            # Add high score
+            self.high_score.append(chil.split(':'))
+            self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
+            self.high_score = self.high_score[:min(len(self.high_score), 20)]
+
+            # Add current score
             if not self.curr_score:
                 self.curr_score = [chil.split(':')]
             elif len(self.curr_score) < 20:
