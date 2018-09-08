@@ -10,3 +10,6 @@ echo "###### Done #########################"
 echo "###### Installing Kazoo module ######"
 pip install kazoo
 echo "###### Done #########################"
+echo "###### Installing NumPy module ######"
+pip install numpy
+echo "###### Done #########################"

@@ -1,41 +1,51 @@
-#!/usr/local/bin/python3
+#!/usr/local/bin/python
 
 import logging
 import time
 
-from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.client import KazooClient
+from kazoo.recipe.party import Party
 from kazoo.recipe.queue import Queue
+from kazoo.recipe.watchers import ChildrenWatch
 
 
 class ScoreWatcher:
 
     curr_score = []
     high_score = []
+    online_players = set()
 
     def __init__(self):
         logging.basicConfig()
         self.zk = KazooClient(hosts='127.0.0.1:2181')
         self.zk.start()
-        print('Watch begin')
         self.my_queue = Queue(self.zk, "/queue")
         cw = ChildrenWatch(self.zk, "/queue", self.process_score)
+        dw = ChildrenWatch(self.zk, "/clients", self.process_client)
 
 
     def print_recent_board(self):
-        print('Most recent scores')
-        print('------------------')
-        for player, score in self.curr_score:
-            print('{}\t\t{}'.format(player, score))
-        print('\n')
+        if self.curr_score:
+            print('Most recent scores')
+            print('------------------')
+            for player, score in self.curr_score:
+                if player in self.online_players:
+                    print('{}\t\t{}\t**'.format(player, score))
+                else:
+                    print('{}\t\t{}'.format(player, score))
+            print('\n')
 
 
     def print_leader_board(self):
-        print('Highest scores')
-        print('--------------')
-        for player, score in self.high_score:
-            print('{}\t\t{}'.format(player, score))
-        print('\n')
+        if self.high_score:
+            print('Highest scores')
+            print('--------------')
+            for player, score in self.high_score:
+                if player in self.online_players:
+                    print('{}\t\t{}\t**'.format(player, score))
+                else:
+                    print('{}\t\t{}'.format(player, score))
+            print('\n')
 
 
     def process_score(self, children):
@@ -57,11 +67,20 @@ class ScoreWatcher:
             self.print_leader_board()
 
 
+    def process_client(self, children):
+        party = Party(self.zk, '/clients')
+        self.online_players = set(party)
+        self.print_recent_board()
+        self.print_leader_board()
+
+
 def main():
     sw = ScoreWatcher()
-    while True:
-        time.sleep(1)
-
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt as ex:
+        pass
 
 if __name__ == '__main__':
     main()
