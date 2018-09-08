@@ -8,21 +8,33 @@ from kazoo.client import KazooClient
 from kazoo.recipe.queue import Queue
 from numpy import random
 
-logging.basicConfig()
-zk = KazooClient(hosts='127.0.0.1:2181')
-zk.start()
-print('Client begin')
-data = 0
-my_queue = Queue(zk, "/queue")
+class Player:
 
-mu, sigma = 0, 0.1 # mean and standard deviation
+    def __init__(self):
+        logging.basicConfig()
+        zk = KazooClient(hosts='127.0.0.1:2181')
+        zk.start()
+        print('Client begin')
+        data = 0
+        self.my_queue = Queue(zk, "/queue")
 
-while True:
-    data = int(round(abs(random.normal(mu, sigma, 1) * 1000000)))
-    my_queue.put((sys.argv[1] + ':' + str(data)).encode('utf-8'))
-    time.sleep(1)
-    print('Value set: {}'.format(data))
-    data += 1
+    def post_score(self, score):
+        self.my_queue.put('{}:{}'.format(sys.argv[1],str(score)).encode('utf-8'))
+
+
+def get_normal_random(max_val=1000000):
+    mu, sigma = 0, 0.1 # mean and standard deviation
+    return int(round(abs(random.normal(mu, sigma, 1) * max_val)))
+
+def main():
+    player = Player()
+    while True:
+        score = get_normal_random()
+        delay = get_normal_random(50)
+        print('Value set: {}, delay: {}'.format(score, delay))
+        player.post_score(score)
+        time.sleep(delay)
+
 
 if __name__ == '__main__':
     main()
