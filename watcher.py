@@ -1,12 +1,12 @@
-#!/usr/local/bin/python3
+#!/usr/local/bin/python
 
 import logging
 import time
 
-from kazoo.recipe.watchers import ChildrenWatch
 from kazoo.client import KazooClient
-from kazoo.recipe.queue import Queue
 from kazoo.recipe.party import Party
+from kazoo.recipe.queue import Queue
+from kazoo.recipe.watchers import ChildrenWatch
 
 
 class ScoreWatcher:
