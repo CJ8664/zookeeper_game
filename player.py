@@ -11,12 +11,14 @@ from numpy import random
 
 class Player:
 
-    def __init__(self):
+    name = ''
+    def __init__(self, ip_port, name):
         logging.basicConfig()
-        zk = KazooClient(hosts='127.0.0.1:2181')
+        zk = KazooClient(hosts=ip_port)
         zk.start()
-        self.my_queue = Queue(zk, "/queue")
-        self.party = Party(zk, '/clients', sys.argv[1])
+        self.name = name
+        self.my_queue = Queue(zk, "/csjain_queue")
+        self.party = Party(zk, '/csjain_players', self.name)
 
     def join_party(self):
         self.party.join()
@@ -25,23 +27,64 @@ class Player:
         self.party.leave()
 
     def post_score(self, score):
-        self.my_queue.put('{}:{}'.format(sys.argv[1],str(score)).encode('utf-8'))
+        self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
-def get_normal_random(max_val=1000000):
-    mu, sigma = 0, 0.1 # mean and standard deviation
+def get_normal_random(mu, sigma, max_val=1000000):
+    # mean and standard deviation
     return int(round(abs(random.normal(mu, sigma, 1) * max_val)))
 
 def main():
-    player = Player()
+
+    arg_count = len(sys.argv)
+    if arg_count >= 2:
+        # IP:PORT
+        ip_port = sys.argv[1].split(':')
+        if len(ip_port) == 1:
+            ip_port = '{}:6000'.format(ip_port[0])
+        else:
+            ip_port = ip_port[0]
+    else:
+        print('Zookeeper IP not provided')
+        sys.exit(-1)
+
+    if arg_count >= 3:
+        # IP:PORT Name
+        name = sys.argv[2]
+    else:
+        print('Player Name missing')
+        sys.exit(-1)
+
+    if arg_count >= 4:
+        # IP:PORT Name count
+        player_turns = int(sys.argv[3])
+    else:
+        player_turns = float('inf')
+
+    if arg_count >= 5:
+        # IP:PORT Name count mean_delay
+        u_delay = float(sys.argv[4])
+    else:
+        u_delay = 0
+
+    if arg_count >= 6:
+        # IP:PORT Name count mean_score
+        u_score = float(sys.argv[5])
+    else:
+        u_score = 0.1
+
+    player = Player(ip_port, name)
+    print(ip_port, name)
     player.join_party()
     try:
-        while True:
-            score = get_normal_random()
-            delay = get_normal_random(50)
-            # print('Value set: {}, delay: {}'.format(score, delay))
+        c = 0
+        while c <= player_turns:
+            score = get_normal_random(u_delay, u_score)
+            delay = get_normal_random(50, u_delay, u_score)
+            print('Value set: {}, delay: {}'.format(score, delay))
             player.post_score(score)
             time.sleep(delay)
+            c += 1
     except KeyboardInterrupt as ex:
         player.leave_party()
 

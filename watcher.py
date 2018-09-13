@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 
 import logging
+import sys
 import time
 
 from kazoo.client import KazooClient
@@ -14,14 +15,18 @@ class ScoreWatcher:
     curr_score = []
     high_score = []
     online_players = set()
+    score_board_size = 20
 
-    def __init__(self):
+    def __init__(self, ip_port, score_board_size):
         logging.basicConfig()
-        self.zk = KazooClient(hosts='127.0.0.1:2181')
+        self.zk = KazooClient(hosts=ip_port, logger=logging)
+        self.score_board_size = score_board_size
         self.zk.start()
-        self.my_queue = Queue(self.zk, "/queue")
-        cw = ChildrenWatch(self.zk, "/queue", self.process_score)
-        dw = ChildrenWatch(self.zk, "/clients", self.process_client)
+        self.my_queue = Queue(self.zk, "/csjain_queue")
+        # self.zk.delete("/csjain_queue", recursive=True)
+        # self.zk.delete("/csjain_players", recursive=True)
+        cw = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
+        dw = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
 
 
     def print_recent_board(self):
@@ -54,12 +59,12 @@ class ScoreWatcher:
             # Add high score
             self.high_score.append(chil.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
-            self.high_score = self.high_score[:min(len(self.high_score), 20)]
+            self.high_score = self.high_score[:min(len(self.high_score), self.score_board_size)]
 
             # Add current score
             if not self.curr_score:
                 self.curr_score = [chil.split(':')]
-            elif len(self.curr_score) < 20:
+            elif len(self.curr_score) < self.score_board_size:
                 self.curr_score = [chil.split(':')] + self.curr_score
             else:
                 self.curr_score = [chil.split(':')] + self.curr_score[:-1]
@@ -68,14 +73,22 @@ class ScoreWatcher:
 
 
     def process_client(self, children):
-        party = Party(self.zk, '/clients')
+        party = Party(self.zk, '/csjain_players')
         self.online_players = set(party)
         self.print_recent_board()
         self.print_leader_board()
 
 
 def main():
-    sw = ScoreWatcher()
+    ip_port, score_board_size = sys.argv[1].split(':'), int(sys.argv[2])
+
+    if len(ip_port) == 1:
+        ip_port = '{}:6000'.format(ip_port[0])
+    else:
+        ip_port = ip_port[0]
+
+    sw = ScoreWatcher(ip_port, score_board_size)
+
     try:
         while True:
             time.sleep(1)
