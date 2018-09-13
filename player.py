@@ -63,13 +63,13 @@ def main():
 
     if arg_count >= 5:
         # IP:PORT Name count mean_delay
-        u_delay = int(sys.argv[4])
+        u_delay = float(sys.argv[4])
     else:
         u_delay = 0
 
     if arg_count >= 6:
         # IP:PORT Name count mean_score
-        u_score = int(sys.argv[5])
+        u_score = float(sys.argv[5])
     else:
         u_score = 0.1
 
@@ -77,13 +77,14 @@ def main():
     print(ip_port, name)
     player.join_party()
     try:
-        while True:
-
+        c = 0
+        while c <= player_turns:
             score = get_normal_random(u_delay, u_score)
             delay = get_normal_random(50, u_delay, u_score)
             print('Value set: {}, delay: {}'.format(score, delay))
             player.post_score(score)
             time.sleep(delay)
+            c += 1
     except KeyboardInterrupt as ex:
         player.leave_party()
 
