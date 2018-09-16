@@ -15,25 +15,32 @@ class ScoreWatcher:
     curr_score = []
     high_score = []
     online_players = set()
-    score_board_size = 20
+    score_board_size = 25
 
     def __init__(self, ip_port, score_board_size):
+        '''Initialize everyting for the watcher'''
         logging.basicConfig()
-        self.zk = KazooClient(hosts=ip_port, logger=logging)
         self.score_board_size = score_board_size
+
+        # Create client
+        self.zk = KazooClient(hosts=ip_port, logger=logging)
         self.zk.start()
 
+        # Ensure Paths
         self.zk.ensure_path("/csjain_queue")
         self.zk.ensure_path("/csjain_players")
 
-        self.my_queue = Queue(self.zk, "/csjain_queue")
+        # Create Data structures
+        self.score_queue = Queue(self.zk, "/csjain_queue")
         self.party = Party(self.zk, '/csjain_players')
 
-        cw = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
-        dw = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
+        # Create Watchers
+        _ = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
+        _ = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
 
 
     def print_recent_board(self):
+        '''Print the formatted Recent Score Board'''
         if self.curr_score:
             print('Most recent scores')
             print('------------------')
@@ -46,6 +53,7 @@ class ScoreWatcher:
 
 
     def print_leader_board(self):
+        '''Print the formatted Leader Board'''
         if self.high_score:
             print('Highest scores')
             print('--------------')
@@ -58,20 +66,23 @@ class ScoreWatcher:
 
 
     def process_score(self, children):
-        if len(self.my_queue) > 0:
-            chil = self.my_queue.get()
-            # Add high score
+        '''Process any new score that is posted'''
+        if len(self.score_queue) > 0:
+            chil = self.score_queue.get()
+
+            # Update high score
             self.high_score.append(chil.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
             self.high_score = self.high_score[:min(len(self.high_score), self.score_board_size)]
 
-            # Add current score
+            # Update current score
             if not self.curr_score:
                 self.curr_score = [chil.split(':')]
             elif len(self.curr_score) < self.score_board_size:
                 self.curr_score = [chil.split(':')] + self.curr_score
             else:
                 self.curr_score = [chil.split(':')] + self.curr_score[:-1]
+
             self.print_recent_board()
             self.print_leader_board()
 
@@ -85,7 +96,7 @@ class ScoreWatcher:
 
 
 def main():
-    
+
     ip_port, score_board_size = sys.argv[1].split(':'), int(sys.argv[2])
 
     if len(ip_port) == 1:
@@ -93,7 +104,7 @@ def main():
     else:
         ip_port = ip_port[0]
 
-    sw = ScoreWatcher(ip_port, score_board_size)
+    score_watcher = ScoreWatcher(ip_port, score_board_size)
 
     try:
         while True:
