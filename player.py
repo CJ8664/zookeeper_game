@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import logging
-import time
 import sys
+import time
 
 from kazoo.client import KazooClient
 from kazoo.recipe.queue import Queue
@@ -14,7 +14,7 @@ class Player:
     name = ''
     def __init__(self, ip_port, name):
         logging.basicConfig()
-        zk = KazooClient(hosts=ip_port)
+        self.zk = KazooClient(hosts=ip_port, logger=logging)
         zk.start()
         self.name = name
         self.my_queue = Queue(zk, "/csjain_queue")
@@ -76,6 +76,7 @@ def main():
     player = Player(ip_port, name)
     print(ip_port, name)
     player.join_party()
+    
     try:
         c = 0
         while c <= player_turns:

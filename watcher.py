@@ -22,9 +22,13 @@ class ScoreWatcher:
         self.zk = KazooClient(hosts=ip_port, logger=logging)
         self.score_board_size = score_board_size
         self.zk.start()
+
+        self.zk.ensure_path("/csjain_queue")
+        self.zk.ensure_path("/csjain_players")
+
         self.my_queue = Queue(self.zk, "/csjain_queue")
-        # self.zk.delete("/csjain_queue", recursive=True)
-        # self.zk.delete("/csjain_players", recursive=True)
+        self.party = Party(self.zk, '/csjain_players')
+
         cw = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
         dw = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
 
@@ -54,8 +58,8 @@ class ScoreWatcher:
 
 
     def process_score(self, children):
-        chil = self.my_queue.get()
-        if chil:
+        if len(self.my_queue) > 0:
+            chil = self.my_queue.get()
             # Add high score
             self.high_score.append(chil.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
@@ -71,15 +75,17 @@ class ScoreWatcher:
             self.print_recent_board()
             self.print_leader_board()
 
+        return True
+
 
     def process_client(self, children):
-        party = Party(self.zk, '/csjain_players')
-        self.online_players = set(party)
+        self.online_players = set(self.party)
         self.print_recent_board()
         self.print_leader_board()
 
 
 def main():
+    
     ip_port, score_board_size = sys.argv[1].split(':'), int(sys.argv[2])
 
     if len(ip_port) == 1:
