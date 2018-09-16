@@ -16,7 +16,7 @@ class ScoreWatcher:
     high_score = []
     online_players = set()
 
-    def __init__(self, ip_port, score_board_size=25):
+    def __init__(self, ip_port, score_board_size):
         '''Initialize everyting for the watcher'''
         logging.basicConfig()
         self.score_board_size = score_board_size
@@ -26,16 +26,18 @@ class ScoreWatcher:
         self.zk.start()
 
         # Ensure Paths
-        self.zk.ensure_path("/csjain_queue")
-        self.zk.ensure_path("/csjain_players")
+        self.zk.ensure_path('/csjain_queue')
+        self.zk.ensure_path('/csjain_players')
 
         # Create Data structures
-        self.score_queue = Queue(self.zk, "/csjain_queue")
+        self.score_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players')
 
         # Create Watchers
-        _ = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
-        _ = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
+        _ = ChildrenWatch(self.zk, '/csjain_queue', self.process_score)
+        _ = ChildrenWatch(self.zk, '/csjain_players', self.process_client)
+
+        print('Watcher started', ip_port, score_board_size)
 
 
     def print_recent_board(self):
@@ -97,12 +99,23 @@ class ScoreWatcher:
 
 def main():
 
-    ip_port, score_board_size = sys.argv[1].split(':'), int(sys.argv[2])
-
-    if len(ip_port) == 1:
-        ip_port = '{}:6000'.format(ip_port[0])
+    arg_count = len(sys.argv)
+    if arg_count >= 2:
+        # IP:PORT
+        ip_port = sys.argv[1].split(':')
+        if len(ip_port) == 1:
+            ip_port = '{}:6000'.format(ip_port[0])
+        else:
+            ip_port = sys.argv[1]
     else:
-        ip_port = ip_port[0]
+        print('Zookeeper IP not provided')
+        sys.exit(-1)
+
+    if arg_count >= 3:
+        #Board size
+        score_board_size = int(sys.argv[2])
+    else:
+        score_board_size = 25
 
     score_watcher = ScoreWatcher(ip_port, score_board_size)
 
