@@ -23,12 +23,14 @@ class Player:
         self.zk.start()
 
         # Ensure Paths
-        self.zk.ensure_path("/csjain_queue")
-        self.zk.ensure_path("/csjain_players")
+        self.zk.ensure_path('/csjain_queue')
+        self.zk.ensure_path('/csjain_players')
 
         # Create Data structures
-        self.my_queue = Queue(self.zk, "/csjain_queue")
+        self.my_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players', self.name)
+        
+        print('Player started', ip_port, name)
 
     def join_party(self):
         '''Add player to list of current online players'''
@@ -57,7 +59,7 @@ def main():
         if len(ip_port) == 1:
             ip_port = '{}:6000'.format(ip_port[0])
         else:
-            ip_port = ip_port[0]
+            ip_port = sys.argv[1]
     else:
         print('Zookeeper IP not provided')
         sys.exit(-1)
@@ -88,7 +90,6 @@ def main():
         u_score = 4
 
     player = Player(ip_port, name)
-    print(ip_port, name)
     player.join_party()
 
     try:
@@ -96,7 +97,7 @@ def main():
         while c <= player_turns:
             score = get_normal_random(u_delay, 10000)
             delay = get_normal_random(u_score)
-            print('Value set: {}, delay: {}'.format(score, delay))
+            print('Score published: {}, delay: {}'.format(score, delay))
             player.post_score(score)
             time.sleep(delay)
             c += 1
