@@ -29,7 +29,7 @@ class Player:
         # Create Data structures
         self.my_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players', self.name)
-        
+
         print('Player started', ip_port, name)
 
     def join_party(self):
@@ -101,6 +101,7 @@ def main():
             player.post_score(score)
             time.sleep(delay)
             c += 1
+        player.leave_party()
     except KeyboardInterrupt as ex:
         player.leave_party()
 
