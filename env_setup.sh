@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "Setting up Environment"
+echo "****** Setting up Environment *******"
 echo "###### Updating apt-get #############"
 sudo apt-get update
 echo "###### Done #########################"
@@ -13,5 +13,8 @@ echo "###### Done #########################"
 echo "###### Installing NumPy module ######"
 pip install numpy
 echo "###### Done #########################"
-cp watcher.py watcher
-cp player.py player
+echo "###### Copying binaries #############"
+sudo cp -pf watcher.py /usr/bin/watcher
+sudo cp -pf player.py /usr/bin/player
+echo "###### Done #########################"
+echo "************ ALL DONE ! *************"
