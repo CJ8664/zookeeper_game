@@ -26,16 +26,16 @@ class ScoreWatcher:
         self.zk.start()
 
         # Ensure Paths
-        self.zk.ensure_path("/csjain_queue")
-        self.zk.ensure_path("/csjain_players")
+        self.zk.ensure_path('/csjain_queue')
+        self.zk.ensure_path('/csjain_players')
 
         # Create Data structures
-        self.score_queue = Queue(self.zk, "/csjain_queue")
+        self.score_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players')
 
         # Create Watchers
-        _ = ChildrenWatch(self.zk, "/csjain_queue", self.process_score)
-        _ = ChildrenWatch(self.zk, "/csjain_players", self.process_client)
+        _ = ChildrenWatch(self.zk, '/csjain_queue', self.process_score)
+        _ = ChildrenWatch(self.zk, '/csjain_players', self.process_client)
 
         print('Watcher started', ip_port, score_board_size)
 
