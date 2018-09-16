@@ -43,10 +43,10 @@ class Player:
         self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
-def get_normal_random(mu, sigma, max_val=1000000):
+def get_normal_random(mu, max_val=1):
     '''Helper method to generate random number
-    given the mean and standard deviation'''
-    return int(round(abs(random.normal(mu, sigma, 1) * max_val)))
+    given the mean and standard deviation=1.5'''
+    return int(abs(random.normal(mu, 1.5, 1)) * max_val)
 
 def main():
 
@@ -79,13 +79,13 @@ def main():
         # IP:PORT Name count mean_delay
         u_delay = float(sys.argv[4])
     else:
-        u_delay = 0
+        u_delay = 4
 
     if arg_count >= 6:
         # IP:PORT Name count mean_score
         u_score = float(sys.argv[5])
     else:
-        u_score = 0.1
+        u_score = 4
 
     player = Player(ip_port, name)
     print(ip_port, name)
@@ -94,8 +94,8 @@ def main():
     try:
         c = 0
         while c <= player_turns:
-            score = get_normal_random(u_delay, u_score)
-            delay = get_normal_random(50, u_delay, u_score)
+            score = get_normal_random(u_delay, 10000)
+            delay = get_normal_random(u_score)
             print('Value set: {}, delay: {}'.format(score, delay))
             player.post_score(score)
             time.sleep(delay)
