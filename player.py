@@ -1,8 +1,8 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
 
 import logging
-import time
 import sys
+import time
 
 from kazoo.client import KazooClient
 from kazoo.recipe.queue import Queue
@@ -12,26 +12,40 @@ from numpy import random
 class Player:
 
     name = ''
+
     def __init__(self, ip_port, name):
-        logging.basicConfig()
-        zk = KazooClient(hosts=ip_port)
-        zk.start()
+        '''Initialize everyting for the player'''
         self.name = name
-        self.my_queue = Queue(zk, "/csjain_queue")
-        self.party = Party(zk, '/csjain_players', self.name)
+        logging.basicConfig()
+
+        # Create client
+        self.zk = KazooClient(hosts=ip_port, logger=logging)
+        self.zk.start()
+
+        # Ensure Paths
+        self.zk.ensure_path("/csjain_queue")
+        self.zk.ensure_path("/csjain_players")
+
+        # Create Data structures
+        self.my_queue = Queue(self.zk, "/csjain_queue")
+        self.party = Party(self.zk, '/csjain_players', self.name)
 
     def join_party(self):
+        '''Add player to list of current online players'''
         self.party.join()
 
     def leave_party(self):
+        '''Remove player from list of current online players'''
         self.party.leave()
 
     def post_score(self, score):
+        '''Post a random score'''
         self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
 def get_normal_random(mu, sigma, max_val=1000000):
-    # mean and standard deviation
+    '''Helper method to generate random number
+    given the mean and standard deviation'''
     return int(round(abs(random.normal(mu, sigma, 1) * max_val)))
 
 def main():
@@ -76,6 +90,7 @@ def main():
     player = Player(ip_port, name)
     print(ip_port, name)
     player.join_party()
+
     try:
         c = 0
         while c <= player_turns:

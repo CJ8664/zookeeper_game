@@ -13,3 +13,5 @@ echo "###### Done #########################"
 echo "###### Installing NumPy module ######"
 pip install numpy
 echo "###### Done #########################"
+cp watcher.py watcher
+cp player.py player
