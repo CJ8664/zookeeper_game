@@ -15,9 +15,8 @@ class ScoreWatcher:
     curr_score = []
     high_score = []
     online_players = set()
-    score_board_size = 25
 
-    def __init__(self, ip_port, score_board_size):
+    def __init__(self, ip_port, score_board_size=25):
         '''Initialize everyting for the watcher'''
         logging.basicConfig()
         self.score_board_size = score_board_size
@@ -66,8 +65,8 @@ class ScoreWatcher:
 
 
     def process_score(self, children):
-        '''Process any new score that is posted'''
-        if len(self.score_queue) > 0:
+        '''Process any pending score or new score that is posted'''
+        while len(self.score_queue) > 0:
             chil = self.score_queue.get()
 
             # Update high score
@@ -83,13 +82,14 @@ class ScoreWatcher:
             else:
                 self.curr_score = [chil.split(':')] + self.curr_score[:-1]
 
-            self.print_recent_board()
-            self.print_leader_board()
+        self.print_recent_board()
+        self.print_leader_board()
 
         return True
 
 
     def process_client(self, children):
+        '''Process updates to a player joining or leaving the game'''
         self.online_players = set(self.party)
         self.print_recent_board()
         self.print_leader_board()
