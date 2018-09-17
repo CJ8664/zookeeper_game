@@ -48,7 +48,7 @@ class Player:
 def get_normal_random(mu, max_val=1):
     '''Helper method to generate random number
     given the mean and standard deviation=1.5'''
-    return int(abs(random.normal(mu, 1.5, 1)) * max_val)
+    return int(abs(random.normal(mu, 1.5, 1)))
 
 def main():
 
@@ -95,7 +95,7 @@ def main():
     try:
         c = 0
         while c <= player_turns:
-            score = get_normal_random(u_delay, 10000)
+            score = get_normal_random(u_delay)
             delay = get_normal_random(u_score)
             print('Score published: {}, delay: {}'.format(score, delay))
             player.post_score(score)
