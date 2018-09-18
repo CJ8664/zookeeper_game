@@ -35,12 +35,11 @@ class ScoreWatcher:
         # Create Data structures
         self.score_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players')
+        self.online_players = set(self.party)
 
         # Create Watchers
         _ = ChildrenWatch(self.zk, '/csjain_queue', self.process_score)
         _ = ChildrenWatch(self.zk, '/csjain_players', self.process_client)
-
-        self.online_players = set(self.party)
 
     def print_scoreboards(self):
         '''Print the formatted Recent Score and Leader Board'''
@@ -70,13 +69,13 @@ class ScoreWatcher:
 
     def process_score(self, children):
         '''Process any pending score or new score that is posted'''
-
+        # print('trigger fired')
         if self.is_init_score:
             self.is_init_score = False
-            # print('return from init score')
 
         while len(self.score_queue) > 0 and not self.is_dump:
             chil = self.score_queue.get()
+
             if not chil:
                 break
             # print('in while' + chil)
@@ -115,7 +114,7 @@ class ScoreWatcher:
 
     def dump_scoreboard(self):
         self.is_dump = True
-        print('Starting Dump')
+        # print('Starting Dump')
         for name, score in self.high_score:
             self.score_queue.put('{}:{}'.format(name, score).encode('utf-8'))
 

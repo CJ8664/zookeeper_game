@@ -43,10 +43,10 @@ class Player:
         self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
-def get_normal_random(mu, max_val=1):
+def get_normal_random(mu, var):
     '''Helper method to generate random number
     given the mean and standard deviation=1.5'''
-    return int(abs(random.normal(mu, 1.5, 1)))
+    return int(abs(random.normal(mu, var*mu, 1)))
 
 def main():
 
@@ -104,8 +104,8 @@ def main():
         else: # Batch Mode
             c = 0
             while c <= player_turns:
-                score = get_normal_random(u_delay)
-                delay = get_normal_random(u_score)
+                score = get_normal_random(u_delay, 0.1)
+                delay = get_normal_random(u_score, 0.35)
                 print('Score published: {}, delay: {}'.format(score, delay))
                 player.post_score(score)
                 time.sleep(delay)
