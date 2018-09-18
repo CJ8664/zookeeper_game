@@ -20,6 +20,9 @@ class ScoreWatcher:
         '''Initialize everyting for the watcher'''
         logging.basicConfig()
         self.score_board_size = score_board_size
+        self.is_dump = False
+        self.is_init_score = True
+        self.is_init_client = True
 
         # Create client
         self.zk = KazooClient(hosts=ip_port, logger=logging)
@@ -37,14 +40,16 @@ class ScoreWatcher:
         _ = ChildrenWatch(self.zk, '/csjain_queue', self.process_score)
         _ = ChildrenWatch(self.zk, '/csjain_players', self.process_client)
 
-        print('Watcher started', ip_port, score_board_size)
+        self.online_players = set(self.party)
 
+    def print_scoreboards(self):
+        '''Print the formatted Recent Score and Leader Board'''
+        if self.is_dump or self.is_init_score or self.is_init_client:
+            return
 
-    def print_recent_board(self):
-        '''Print the formatted Recent Score Board'''
+        print('Most recent scores')
+        print('------------------')
         if self.curr_score:
-            print('Most recent scores')
-            print('------------------')
             for player, score in self.curr_score:
                 if player in self.online_players:
                     print('{}\t\t{}\t**'.format(player, score))
@@ -52,12 +57,9 @@ class ScoreWatcher:
                     print('{}\t\t{}'.format(player, score))
             print('\n')
 
-
-    def print_leader_board(self):
-        '''Print the formatted Leader Board'''
+        print('Highest scores')
+        print('--------------')
         if self.high_score:
-            print('Highest scores')
-            print('--------------')
             for player, score in self.high_score:
                 if player in self.online_players:
                     print('{}\t\t{}\t**'.format(player, score))
@@ -68,9 +70,16 @@ class ScoreWatcher:
 
     def process_score(self, children):
         '''Process any pending score or new score that is posted'''
-        while len(self.score_queue) > 0:
-            chil = self.score_queue.get()
 
+        if self.is_init_score:
+            self.is_init_score = False
+            # print('return from init score')
+
+        while len(self.score_queue) > 0 and not self.is_dump:
+            chil = self.score_queue.get()
+            if not chil:
+                break
+            # print('in while' + chil)
             # Update high score
             self.high_score.append(chil.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
@@ -84,17 +93,31 @@ class ScoreWatcher:
             else:
                 self.curr_score = [chil.split(':')] + self.curr_score[:-1]
 
-        self.print_recent_board()
-        self.print_leader_board()
+        # print('caliing from process_score')
+        self.print_scoreboards()
 
         return True
 
 
     def process_client(self, children):
         '''Process updates to a player joining or leaving the game'''
+        if self.is_init_client:
+            self.is_init_client = False
+            # print('return from init client')
+            return True
+
         self.online_players = set(self.party)
-        self.print_recent_board()
-        self.print_leader_board()
+        # print('caliing from process_client')
+        if self.curr_score:
+            self.print_scoreboards()
+
+        return True
+
+    def dump_scoreboard(self):
+        self.is_dump = True
+        print('Starting Dump')
+        for name, score in self.high_score:
+            self.score_queue.put('{}:{}'.format(name, score).encode('utf-8'))
 
 
 def main():
@@ -117,13 +140,18 @@ def main():
     else:
         score_board_size = 25
 
+    if score_board_size > 25:
+        print('Score Board size cannot be greater than 25, exiting...')
+        sys.exit(0)
+
+    print('Starting Watcher at {} with score board size {}'.format(ip_port, score_board_size))
     score_watcher = ScoreWatcher(ip_port, score_board_size)
 
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt as ex:
-        pass
+        score_watcher.dump_scoreboard()
 
 if __name__ == '__main__':
     main()
