@@ -30,8 +30,6 @@ class Player:
         self.my_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players', self.name)
 
-        print('Player started', ip_port, name)
-
     def join_party(self):
         '''Add player to list of current online players'''
         self.party.join()
@@ -45,10 +43,10 @@ class Player:
         self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
-def get_normal_random(mu, max_val=1):
+def get_normal_random(mu, var):
     '''Helper method to generate random number
     given the mean and standard deviation=1.5'''
-    return int(abs(random.normal(mu, 1.5, 1)))
+    return int(abs(random.normal(mu, var*mu, 1)))
 
 def main():
 
@@ -75,7 +73,7 @@ def main():
         # IP:PORT Name count
         player_turns = int(sys.argv[3])
     else:
-        player_turns = float('inf')
+        player_turns = -1
 
     if arg_count >= 5:
         # IP:PORT Name count mean_delay
@@ -90,18 +88,29 @@ def main():
         u_score = 4
 
     player = Player(ip_port, name)
+    print('Starting Player at {} with name {}\n'.format(ip_port, name))
+    if name in set(player.party):
+        print('Player {} is already online, exiting...'.format(name))
+        sys.exit(0)
     player.join_party()
 
     try:
-        c = 0
-        while c <= player_turns:
-            score = get_normal_random(u_delay)
-            delay = get_normal_random(u_score)
-            print('Score published: {}, delay: {}'.format(score, delay))
-            player.post_score(score)
-            time.sleep(delay)
-            c += 1
-        player.leave_party()
+        if player_turns == -1: # Manual mode
+            while True:
+                print('Enter Score: '),
+                score = int(raw_input())
+                print('Score published: {}'.format(score))
+                player.post_score(score)
+        else: # Batch Mode
+            c = 0
+            while c <= player_turns:
+                score = get_normal_random(u_delay, 0.1)
+                delay = get_normal_random(u_score, 0.35)
+                print('Score published: {}, delay: {}'.format(score, delay))
+                player.post_score(score)
+                time.sleep(delay)
+                c += 1
+            player.leave_party()
     except KeyboardInterrupt as ex:
         player.leave_party()
 
