@@ -43,7 +43,7 @@ class ScoreWatcher:
 
     def print_scoreboards(self):
         '''Print the formatted Recent Score and Leader Board'''
-        if self.is_dump or self.is_init_score or self.is_init_client:
+        if self.is_dump: # or self.is_init_score or self.is_init_client:
             return
 
         print('Most recent scores')
@@ -70,15 +70,17 @@ class ScoreWatcher:
     def process_score(self, children):
         '''Process any pending score or new score that is posted'''
         # print('trigger fired')
-        if self.is_init_score:
+        if not children and not self.is_init_score:
+            return True
+        elif self.is_init_score:
             self.is_init_score = False
 
         while len(self.score_queue) > 0 and not self.is_dump:
             chil = self.score_queue.get()
-
+            # continue
             if not chil:
                 break
-            # print('in while' + chil)
+            print('in while' + chil)
             # Update high score
             self.high_score.append(chil.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
@@ -114,7 +116,7 @@ class ScoreWatcher:
 
     def dump_scoreboard(self):
         self.is_dump = True
-        # print('Starting Dump')
+        print('Starting Dump')
         for name, score in self.high_score:
             self.score_queue.put('{}:{}'.format(name, score).encode('utf-8'))
 
