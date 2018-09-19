@@ -24,9 +24,13 @@ class ScoreWatcher:
         self.is_init_score = True
         self.is_init_client = True
 
-        # Create client
-        self.zk = KazooClient(hosts=ip_port, logger=logging)
-        self.zk.start()
+        try:
+            # Create client
+            self.zk = KazooClient(hosts=ip_port, logger=logging)
+            self.zk.start()
+        except Exception as ex:
+            print('Error connecting the Zookeeper Service, Please make sure the service is up or the IP:PORT provided is correct')
+            sys.exit(-1)
 
         # Ensure Paths
         self.zk.ensure_path('/csjain_queue')
@@ -80,7 +84,7 @@ class ScoreWatcher:
 
             # Update high score
             self.high_score.append(new_score.split(':'))
-            self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
+            self.high_score = sorted(self.high_score, key=lambda x: float(x[1]), reverse=True)
             self.high_score = self.high_score[:min(len(self.high_score), self.score_board_size)]
 
             # Update current score
@@ -116,26 +120,35 @@ class ScoreWatcher:
 def main():
 
     arg_count = len(sys.argv)
-    if arg_count >= 2:
+    if arg_count != 3:
+        print('Invalid number of arguments provided, exiting...')
+        sys.exit(-1)
+
+    try:
         # IP:PORT
         ip_port = sys.argv[1].split(':')
         if len(ip_port) == 1:
             ip_port = '{}:6000'.format(ip_port[0])
         else:
             ip_port = sys.argv[1]
-    else:
-        print('Zookeeper IP not provided')
+
+        if not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}$", ip_port):
+            print('Please enter a valid IP address')
+            sys.exit(-1)
+    except Exception as ex:
+        print('Please enter a valid IP address')
         sys.exit(-1)
 
-    if arg_count >= 3:
-        #Board size
-        score_board_size = int(sys.argv[2])
-    else:
-        score_board_size = 25
 
-    if score_board_size > 25:
-        print('Score Board size cannot be greater than 25, exiting...')
-        sys.exit(0)
+    try:
+        # Score Board Size
+        score_board_size = int(sys.argv[2])
+        if score_board_size > 25:
+            print('Score Board size cannot be greater than 25, exiting...')
+            sys.exit(-1)
+    except Exception as ex:
+        print('Please enter a valid Score Board size')
+        sys.exit(-1)
 
     print('Starting Watcher at {} with score board size {}\n'.format(ip_port, score_board_size))
     score_watcher = ScoreWatcher(ip_port, score_board_size)
