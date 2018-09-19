@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import logging
+import re
 import sys
 import time
 
@@ -18,9 +19,13 @@ class Player:
         self.name = name
         logging.basicConfig()
 
-        # Create client
-        self.zk = KazooClient(hosts=ip_port, logger=logging)
-        self.zk.start()
+        try:
+            # Create client
+            self.zk = KazooClient(hosts=ip_port, logger=logging)
+            self.zk.start()
+        except Exception as ex:
+            print('Error connecting the Zookeeper Service, Please make sure the service is up or the IP:PORT provided is correct')
+            sys.exit(-1)
 
         # Ensure Paths
         self.zk.ensure_path('/csjain_queue')
@@ -51,54 +56,64 @@ def get_normal_random(mu, var):
 def main():
 
     arg_count = len(sys.argv)
-    if arg_count >= 2:
+    if arg_count != 3 or arg_count != 6:
+        print('Invalid number of arguments provided, exiting...')
+        sys.exit(-1)
+
+    if arg_count == 6:
+        # IP:PORT Name count mean_delay mean_score
+        try:
+            player_turns = int(sys.argv[3])
+        except Exception as ex:
+            print('Please provide a valid value of count')
+            sys.exit(-1)
+
+        try:
+            u_delay = float(sys.argv[4])
+        except Exception as ex:
+            print('Please provide a valid value of u_delay')
+            sys.exit(-1)
+
+        try:
+            u_score = float(sys.argv[5])
+        except Exception as ex:
+            print('Please provide a valid value of u_score')
+            sys.exit(-1)
+
+    try:
         # IP:PORT
         ip_port = sys.argv[1].split(':')
         if len(ip_port) == 1:
             ip_port = '{}:6000'.format(ip_port[0])
         else:
             ip_port = sys.argv[1]
-    else:
-        print('Zookeeper IP not provided')
+
+        if not re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,4}$", ip_port):
+            print('Please enter a valid IP address')
+            sys.exit(-1)
+    except Exception as ex:
+        print('Please enter a valid IP address')
         sys.exit(-1)
 
-    if arg_count >= 3:
-        # IP:PORT Name
-        name = sys.argv[2]
-    else:
-        print('Player Name missing')
+    name = sys.argv[2]
+    if name == '':
+        print('Please enter a valid Player Name')
         sys.exit(-1)
 
-    if arg_count >= 4:
-        # IP:PORT Name count
-        player_turns = int(sys.argv[3])
-    else:
-        player_turns = -1
-
-    if arg_count >= 5:
-        # IP:PORT Name count mean_delay
-        u_delay = float(sys.argv[4])
-    else:
-        u_delay = 4
-
-    if arg_count >= 6:
-        # IP:PORT Name count mean_score
-        u_score = float(sys.argv[5])
-    else:
-        u_score = 4
 
     player = Player(ip_port, name)
+
     print('Starting Player at {} with name {}\n'.format(ip_port, name))
     if name in set(player.party):
         print('Player {} is already online, exiting...'.format(name))
-        sys.exit(0)
+        sys.exit(-1)
     player.join_party()
 
     try:
-        if player_turns == -1: # Manual mode
+        if player_turns == -1: # Interactive mode
             while True:
                 print('Enter Score: '),
-                score = int(raw_input())
+                score = float(raw_input())
                 print('Score published: {}'.format(score))
                 player.post_score(score)
         else: # Batch Mode
