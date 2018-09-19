@@ -43,7 +43,7 @@ class ScoreWatcher:
 
     def print_scoreboards(self):
         '''Print the formatted Recent Score and Leader Board'''
-        if self.is_dump: # or self.is_init_score or self.is_init_client:
+        if self.is_dump:
             return
 
         print('Most recent scores')
@@ -69,34 +69,29 @@ class ScoreWatcher:
 
     def process_score(self, children):
         '''Process any pending score or new score that is posted'''
-        # print('trigger fired')
-        if not children and not self.is_init_score:
+        if not children:
             return True
-        elif self.is_init_score:
-            self.is_init_score = False
 
         while len(self.score_queue) > 0 and not self.is_dump:
-            chil = self.score_queue.get()
-            # continue
-            if not chil:
+            new_score = self.score_queue.get()
+
+            if not new_score:
                 break
-            print('in while' + chil)
+
             # Update high score
-            self.high_score.append(chil.split(':'))
+            self.high_score.append(new_score.split(':'))
             self.high_score = sorted(self.high_score, key=lambda x: int(x[1]), reverse=True)
             self.high_score = self.high_score[:min(len(self.high_score), self.score_board_size)]
 
             # Update current score
             if not self.curr_score:
-                self.curr_score = [chil.split(':')]
+                self.curr_score = [new_score.split(':')]
             elif len(self.curr_score) < self.score_board_size:
-                self.curr_score = [chil.split(':')] + self.curr_score
+                self.curr_score = [new_score.split(':')] + self.curr_score
             else:
-                self.curr_score = [chil.split(':')] + self.curr_score[:-1]
+                self.curr_score = [new_score.split(':')] + self.curr_score[:-1]
 
-        # print('caliing from process_score')
         self.print_scoreboards()
-
         return True
 
 
@@ -104,11 +99,9 @@ class ScoreWatcher:
         '''Process updates to a player joining or leaving the game'''
         if self.is_init_client:
             self.is_init_client = False
-            # print('return from init client')
             return True
 
         self.online_players = set(self.party)
-        # print('caliing from process_client')
         if self.curr_score:
             self.print_scoreboards()
 
@@ -116,7 +109,6 @@ class ScoreWatcher:
 
     def dump_scoreboard(self):
         self.is_dump = True
-        print('Starting Dump')
         for name, score in self.high_score:
             self.score_queue.put('{}:{}'.format(name, score).encode('utf-8'))
 
@@ -145,7 +137,7 @@ def main():
         print('Score Board size cannot be greater than 25, exiting...')
         sys.exit(0)
 
-    print('Starting Watcher at {} with score board size {}'.format(ip_port, score_board_size))
+    print('Starting Watcher at {} with score board size {}\n'.format(ip_port, score_board_size))
     score_watcher = ScoreWatcher(ip_port, score_board_size)
 
     try:

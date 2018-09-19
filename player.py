@@ -88,7 +88,7 @@ def main():
         u_score = 4
 
     player = Player(ip_port, name)
-    print('Starting Player at {} with name {}'.format(ip_port, name))
+    print('Starting Player at {} with name {}\n'.format(ip_port, name))
     if name in set(player.party):
         print('Player {} is already online, exiting...'.format(name))
         sys.exit(0)
