@@ -45,6 +45,8 @@ class Player:
 
     def post_score(self, score):
         '''Post a random score'''
+        if self.name not in set(self.party):
+            self.party.join()
         self.my_queue.put('{}:{}'.format(self.name, str(score)).encode('utf-8'))
 
 
