@@ -22,7 +22,6 @@ class ScoreWatcher:
         logging.basicConfig()
         self.score_board_size = score_board_size
         self.is_dump = False
-        self.is_init_score = True
         self.is_init_client = True
 
         try:
@@ -41,6 +40,13 @@ class ScoreWatcher:
         self.score_queue = Queue(self.zk, '/csjain_queue')
         self.party = Party(self.zk, '/csjain_players')
         self.online_players = set(self.party)
+
+        if len(self.score_queue) == 0:
+            print('Most recent scores')
+            print('------------------')
+            print('\n')
+            print('Highest scores')
+            print('--------------')
 
         # Create Watchers
         _ = ChildrenWatch(self.zk, '/csjain_queue', self.process_score)
@@ -147,14 +153,17 @@ def main():
         if score_board_size > 25:
             print('Score Board size cannot be greater than 25, exiting...')
             sys.exit(-1)
+        if score_board_size < 1:
+            print('Score Board size cannot be less than 1, exiting...')
+            sys.exit(-1)
     except Exception as ex:
         print('Please enter a valid Score Board size')
         sys.exit(-1)
 
-    print('Starting Watcher at {} with score board size {}\n'.format(ip_port, score_board_size))
-    score_watcher = ScoreWatcher(ip_port, score_board_size)
-
     try:
+        print('Starting Watcher at {} with score board size {}\n'.format(ip_port, score_board_size))
+        score_watcher = ScoreWatcher(ip_port, score_board_size)
+
         while True:
             time.sleep(1)
     except KeyboardInterrupt as ex:

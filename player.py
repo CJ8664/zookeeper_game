@@ -56,11 +56,13 @@ def get_normal_random(mu, var):
 def main():
 
     arg_count = len(sys.argv)
-    if arg_count != 3 or arg_count != 6:
+    batch_mode = False
+    if arg_count != 3 and arg_count != 6:
         print('Invalid number of arguments provided, exiting...')
         sys.exit(-1)
 
     if arg_count == 6:
+        batch_mode = True
         # IP:PORT Name count mean_delay mean_score
         try:
             player_turns = int(sys.argv[3])
@@ -110,10 +112,15 @@ def main():
     player.join_party()
 
     try:
-        if player_turns == -1: # Interactive mode
+        if not batch_mode: # Interactive mode
             while True:
                 print('Enter Score: '),
-                score = float(raw_input())
+                score = raw_input()
+                if score.isdigit():
+                    score = float(score)
+                else:
+                    print('Invalid input for score. Please '),
+                    continue
                 print('Score published: {}'.format(score))
                 player.post_score(score)
         else: # Batch Mode
