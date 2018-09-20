@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# NOTE: $1 is the IP:PORT that you can provide to the script as command line argument
+
 echo "Starting Player Captain America"
 player $1 "Captain America" 100 5000 2 &
 echo "Starting Player Thor"
